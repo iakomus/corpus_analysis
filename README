@@ -1,0 +1,71 @@
+README
+======
+
+The top-level directory contains 2 files:
+	README
+	main.py
+
+This script was developed with a python version 2.7.6. It should work properly with the same or a higher version.
+In order to use it correctly, make sure you have in your computer a corpus file formated as one-paragraph-per-line and files to be used as filters such as: punctuation symbols or tokens in a stoplist.
+
+A simple message of how to use the script would be shown when the script bellow is run:
+	python main.py
+
+To display the brief help text, run:
+	python main.py -h
+
+This will show the different parameters that will be needed to run the script:
+	The path to the corpus is required, and it could be absolute or relative to the main.py file
+
+	python main.py ../corpus.txt
+
+	In case you need to see specifically the 20 most frequent collocations of one statistical method for collocation extraction, use the optional flag --output, which receives the values:
+		2-gram: to output the 20 most frequent collocations and their corresponding frequencies
+		pmi: to compute and output the 20 most frequent collocations as per Point-wise Mutual Information
+		xi: to compute and output the 20 most frequent collocations as per Pearson's Chi-squared test
+		dlog: to compute and output the 20 most frequent collocations as per Dunning's log-likelihood test
+	--output flag values could be used together in any order. 
+	When omitted, by default, all the statistical methods are computed and their results are displayed
+
+		python main.py ../corpus.txt --output xi
+		python main.py ../corpus.txt --output xi dlog
+
+	In case you need to specify one or more skip gram vectors files, you could use the flag: --filters which could be absolute or relative to the main.py file
+	When omitted, by default, no files are used and a Note message is displayed.
+
+		python main.py ../corpus.txt --output xi --filter ../punctuation.txt
+		python main.py ../corpus.txt --output xi dlog --filter ../punctuation.txt /home/mbaxkdl3/COMP61332/stoplist.txt
+
+
+Thoughts about the script:
+	Before using the skip gram vectors filters, the output of the 20 most frequent 2-gram collocations and their corresponding frequencies is not too very accurate, due the presence of common stop words and the punctuation marks. Characteristic that is not shown after using the flag --filter.
+	Comparing the different results for the other methods, it seems that the collocation extraction improves when the punctuations and stop words are removed from the analysis, however, the performance decrease notably.
+
+	This algorithm ignores the EOL characters and process the document as a whole. At first, each line was processed individually, thinking that taking the last word of a paragraph and pair them with the first one of the next would not make sense, but when different punctuation marks are removed (for instance with colons and period followed, which are intended to separate ideas) the same thing happens.
+
+	Before using the skip gram vectors filters:
+	Due the script does not need to check for words or elements in the file, the avg. processing time is about 15 sec. (executing it with no flags)
+	For bigrams calculation, shows pairs with no much significance, for instance: ". the", ", ''", ", and".
+	For PMI values, being N = 3146015; the max value found was bounded by log2(N) = 21.5850941
+
+	After using the skip gram vectors filters:
+	The processing time increase notable to 35 sec. in average
+	For bigrams calculation, the elimination of stopwords and punctuation marks made the 2-grams more interesting, but the occurrence of the DT the is still a quite high.
+	For PMI values, being N = 1953959; the max value found was bounded by log2(N) = 20.8979688
+
+	As noticed by the lecturer, the max PMI value depends of log2(N), and it is shown in both cases.
+	This kind of processing is, with no doubt, a quite heavy and multiple mechanisms to improve it should be required (probably a better mechanism when a skip gram vectors is used, which is when the processing time increases notably).
+	A slight difference in processing time has been seen when the function clean_text is applied to each line instead to the entire document. That is why the last option was chosen
+
+
+NOTE:
+	The function log have been redefined, using the built-in function math.lab(x, [base=e]) but with a fallback when x = 0, reassigning x to the minimun value allowed by python to calculate log(x).
+	This was made because an unhandled "error" when calculating L function on Dunning's log-likelihood rates (line 128).
+	L is defined as:
+		def L(k, n, x):
+			pow(x, k) * pow(1 - x, n - k)
+	but, what the problem is when n is extreamly big and k extreamly low, having n - k extreamly big too. When the pow function is used, the result of 1 - x pow to that big results is 0; which sent as input to log, creates a bug in the system.
+
+	Altought, log (0) is not defined, two options could be used:
+		when 0 return 0
+		or when 0, makes x in log(x, [base=e]) very low: .1e-100
